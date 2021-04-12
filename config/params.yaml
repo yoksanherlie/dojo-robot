@@ -1,0 +1,12 @@
+dqn_robot:
+  environment_name: 'slam-v0'
+
+  # dqn parameters
+  learning_rate: 0.05
+  gamma: 0.7
+  epsilon_start: 1
+  epsilon_min: 0.01
+  epsilon_decay: 0.005
+  n_episodes: 500
+  sync_frequency: 10
+  batch_size: 32

@@ -1,0 +1,4 @@
+<launch>
+	<rosparam command="load" file="$(find dojo_robot_new)/config/params.yaml" />
+	<node pkg="dojo_robot_new" name="dqn_dojo_robot" type="start_training.py" output="screen" />
+</launch>

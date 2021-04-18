@@ -31,7 +31,7 @@ class DQNAgent():
             action = self.model.get_action(state)
         return action, epsilon
 
-    def train(self, max_episodes=1000):
+    def train(self, max_episodes=1000, max_steps=300):
         start_time = time.time()
         decay_step = 1
         for episode in range(1, max_episodes + 1):
@@ -44,7 +44,7 @@ class DQNAgent():
 
             done = False
             step = 1
-            while not done:
+            while not done or step < max_steps:
                 rospy.logwarn('---------- START STEP {} ----------'.format(step))
 
                 # choose action from primary network (policy network)
@@ -141,7 +141,7 @@ class DQNAgent():
             'target_model_state_dict': self.target_model.state_dict(),
             'optimizer_state_dict': self.model.optimizer.state_dict(),
             'target_optimizer_state_dict': self.target_model.optimizer.state_dict()
-        }, '../../training_results/saved_model_ep_{}.pt'.format(episode))
+        }, '../training_results/saved_model_ep_{}.pt'.format(episode))
 
     def initialize(self):
         self.reward = 0

@@ -1,4 +1,13 @@
 <launch>
 	<rosparam command="load" file="$(find dojo_robot_new)/config/params.yaml" />
 	<node pkg="dojo_robot_new" name="dqn_dojo_robot" type="start_training.py" output="screen" />
+
+	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
+	
+	<!-- gmapping -->
+	<node pkg="gmapping" type="slam_gmapping" name="dojo_mapping" output="screen">
+	</node>
+
+	<!-- rviz -->
+	<!--<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>-->
 </launch>

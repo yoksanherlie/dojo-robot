@@ -11,7 +11,7 @@ class DQN(nn.Module):
         self.n_hidden_nodes = 64
 
         self.network = nn.Sequential(
-            nn.Linear(self.fc_layer_inputs, self.n_hidden_nodes),
+            nn.Linear(self.n_inputs, self.n_hidden_nodes),
             nn.ReLU(),
             nn.Linear(self.n_hidden_nodes, self.n_hidden_nodes / 2),
             nn.ReLU(),

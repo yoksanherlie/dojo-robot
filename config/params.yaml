@@ -7,6 +7,7 @@ dqn_robot:
   epsilon_start: 1
   epsilon_min: 0.01
   epsilon_decay: 0.005
-  n_episodes: 500
+  n_episodes: 100
+  n_steps: 200
   sync_frequency: 10
   batch_size: 32

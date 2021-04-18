@@ -26,6 +26,7 @@ if __name__ == '__main__':
     epsilon_decay = rospy.get_param('/dqn_robot/epsilon_decay')
     gamma = rospy.get_param('/dqn_robot/gamma')
     n_episodes = rospy.get_param('/dqn_robot/n_episodes')
+    n_steps = rospy.get_param('/dqn_robot/n_steps')
     sync_frequency = rospy.get_param('/dqn_robot/sync_frequency')
     batch_size = rospy.get_param('/dqn_robot/batch_size')
 
@@ -45,5 +46,5 @@ if __name__ == '__main__':
         sync_frequency=sync_frequency,
         batch_size=batch_size
     )
-    dqn_agent.train(n_episodes)
+    dqn_agent.train(n_episodes, n_steps)
 

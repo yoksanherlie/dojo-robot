@@ -7,6 +7,7 @@ import torch
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import os
 
 class DQNAgent():
     def __init__(self, env, model, epsilon_start, epsilon_min, epsilon_decay, gamma, sync_frequency, batch_size):
@@ -44,7 +45,7 @@ class DQNAgent():
 
             done = False
             step = 1
-            while not done or step < max_steps:
+            while not done and step <= max_steps:
                 rospy.logwarn('---------- START STEP {} ----------'.format(step))
 
                 # choose action from primary network (policy network)
@@ -136,12 +137,13 @@ class DQNAgent():
         plt.show()
 
     def save_model(self, episode):
+        path = os.path.join(os.getcwd(), 'training_results', 'saved_model_ep_{}.pt'.format(episode))
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),
             'optimizer_state_dict': self.model.optimizer.state_dict(),
             'target_optimizer_state_dict': self.target_model.optimizer.state_dict()
-        }, '../training_results/saved_model_ep_{}.pt'.format(episode))
+        }, path)
 
     def initialize(self):
         self.reward = 0

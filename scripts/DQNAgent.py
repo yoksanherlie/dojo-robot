@@ -137,7 +137,7 @@ class DQNAgent():
         plt.show()
 
     def save_model(self, episode):
-        path = os.path.join(os.getcwd(), 'training_results', 'saved_model_ep_{}.pt'.format(episode))
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/saved_model_ep_{}.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),

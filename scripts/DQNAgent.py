@@ -42,6 +42,7 @@ class DQNAgent():
 
             state = self.env.reset()
             self.reward = 0
+            self.exploration_reward = 0
 
             done = False
             step = 1
@@ -51,8 +52,12 @@ class DQNAgent():
                 # choose action from primary network (policy network)
                 action, epsilon = self.select_action(state, decay_step)
                 # execute action in the environment and get feedback
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, info = self.env.step(action)
                 self.reward += reward
+                self.exploration_reward += info['explored_reward']
+
+                rospy.logwarn('Reward: {}'.format(reward))
+                rospy.logwarn('Exploration reward: {}'.format(info['explored_reward']))
 
                 # add experience to replay memory
                 self.memory.append(state, action, reward, done, next_state)
@@ -74,22 +79,27 @@ class DQNAgent():
             episode_time = self.calculate_time(episode_start_time)
             total_time = self.calculate_time(start_time)
 
-            # reward logging for plotting
+            # logging for plotting
             self.rewards.append(self.reward)
             mean_reward = np.mean(self.rewards[-self.window:])
             self.mean_rewards.append(mean_reward)
+            self.episode_losses.append(np.mean(self.losses))
+            self.losses = []
+            self.exploration_rewards.append(self.exploration_reward)
+            self.episode_explored_area.append(info['explored_area'])
 
-            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.2}, decay_step: {}, time: {}] - Total time: {}'.format(
+            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.2}, decay_step: {}, explored_area: {}, time: {}] - Total time: {}'.format(
                 episode,
                 self.reward,
                 epsilon,
                 decay_step,
+                info['explored_area'],
                 episode_time,
                 total_time
             ))
         self.env.close()
         self.save_model(episode)
-        self.plot_rewards()
+        self.plot_results()
 
     def update(self):
         if self.memory.can_provide_sample():
@@ -99,17 +109,17 @@ class DQNAgent():
             loss = self.calculate_loss(batch)
             loss.backward()
             self.model.optimizer.step()
-        # self.update_loss.append()
+            self.losses.append(loss.detach().numpy())
 
     def calculate_loss(self, batch):
         states, actions, rewards, dones, next_states = [i for i in batch]
-        rewards_t = torch.FloatTensor(rewards)
+        rewards_t = torch.FloatTensor(rewards).reshape(-1, 1)
         actions_t = torch.LongTensor(np.array(actions)).reshape(-1, 1)
         dones_t = torch.ByteTensor(dones)
 
         # addition
-        states = np.squeeze(states, axis=1)
-        next_states = np.squeeze(next_states, axis=1)
+        # states = np.squeeze(states, axis=1)
+        # next_states = np.squeeze(next_states, axis=1)
 
         qvals = torch.gather(self.model.get_qvals(states), 1, actions_t).squeeze()
         qvals_next = torch.max(self.target_model.get_qvals(next_states), dim=-1)[0].detach()
@@ -127,17 +137,40 @@ class DQNAgent():
         h, m = divmod(m, 60)
         return '{:02d}:{:02d}:{:02d}'.format(h, m, s)
 
+    def plot_results(self):
+        self.plot_rewards()
+        self.plot_losses()
+        self.plot_areas()
+        plt.show()
+
     def plot_rewards(self):
-        print(self.rewards)
-        plt.figure(figsize=(12,8))
+        print('Rewards: {}'.format(self.rewards))
+        plt.figure(num='Training Rewards', figsize=(12,8))
         plt.plot(self.rewards, label='Rewards')
+        plt.plot(self.exploration_rewards, label='Exploration Rewards')
         plt.plot(self.mean_rewards, label='Mean Rewards')
         plt.xlabel('Episodes')
         plt.ylabel('Rewards')
-        plt.show()
+        plt.legend()
+
+    def plot_losses(self):
+        print('Losses: {}'.format(self.episode_losses))
+        plt.figure(num='Training Losses', figsize=(12,8))
+        plt.plot(self.episode_losses, label='Loss')
+        plt.xlabel('Episodes')
+        plt.ylabel('Loss')
+        plt.legend()
+
+    def plot_areas(self):
+        print('Areas: {}'.format(self.episode_explored_area))
+        plt.figure(num='Area coverage', figsize=(12,8))
+        plt.plot(self.episode_explored_area, label='Area coverage')
+        plt.xlabel('Episodes')
+        plt.ylabel('Area coverage')
+        plt.legend()
 
     def save_model(self, episode):
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/saved_model_ep_{}.pt'.format(episode)
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/circuit_explored_model_ep_{}_4.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),
@@ -147,8 +180,13 @@ class DQNAgent():
 
     def initialize(self):
         self.reward = 0
-        self.memory = ReplayMemory(10000, 100)
+        self.memory = ReplayMemory(50000, 300)
         self.rewards = []
         self.mean_rewards = []
+        self.exploration_reward = 0
+        self.exploration_rewards = []
+        self.episode_explored_area = []
+        self.losses = []
+        self.episode_losses = []
         self.window = 20
 

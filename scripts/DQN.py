@@ -8,16 +8,16 @@ class DQN(nn.Module):
 
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
-        self.n_hidden_nodes = 64
+        self.n_hidden_nodes = 128
 
         self.network = nn.Sequential(
             nn.Linear(self.n_inputs, self.n_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(self.n_hidden_nodes, self.n_hidden_nodes / 2),
+            nn.Linear(self.n_hidden_nodes, self.n_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(self.n_hidden_nodes / 2, self.n_hidden_nodes / 4),
+            nn.Linear(self.n_hidden_nodes, self.n_hidden_nodes),
             nn.ReLU(),
-            nn.Linear(self.n_hidden_nodes / 4, self.n_outputs)
+            nn.Linear(self.n_hidden_nodes, self.n_outputs)
         )
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)

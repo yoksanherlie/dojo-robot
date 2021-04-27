@@ -170,7 +170,7 @@ class DQNAgent():
         plt.legend()
 
     def save_model(self, episode):
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/circuit_explored_model_ep_{}_4.pt'.format(episode)
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/circuit_explored_model_ep_{}_5.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),

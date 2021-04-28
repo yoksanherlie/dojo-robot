@@ -1,0 +1,11 @@
+<launch>
+	<rosparam command="load" file="$(find dojo_robot_new)/config/params.yaml" />
+
+    <!-- turtlebot3-->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_2.launch"></include>
+
+	<node pkg="dojo_robot_new" name="dqn_dojo_robot" type="path_planning_training.py" output="screen" />
+
+    <node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
+</launch>

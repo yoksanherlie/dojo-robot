@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 
-import gym
 import rospy
 from DQN import DQN
-from DQNAgent import DQNAgent
-
-# env
-import gym_slam
+from PathPlanningDQNAgent import PathPlanningDQNAgent
 
 if __name__ == '__main__':
-
-    rospy.init_node('dqn_dojo_robot', anonymous=True, log_level=rospy.INFO)
+    rospy.init_node('dojo_robot_path_planning_dqn', anonymous=True, log_level=rospy.INFO)
 
     # environment setup
-    env_name = rospy.get_param('/dqn_robot/environment_name')
-    env = gym.make(env_name)
-    rospy.loginfo('Gym environment done')
+    action_space_size = 5
+    observation_space_size = 26 # from env (24 laser scans, heading, current distance to goal)
+    env = Env(action_space_size)
 
     # load parameters from config file
     learning_rate = rospy.get_param('/dqn_robot/learning_rate')
@@ -29,13 +24,12 @@ if __name__ == '__main__':
     batch_size = rospy.get_param('/dqn_robot/batch_size')
 
     model = DQN(
-        n_inputs=env.observation_space.shape[0],
-        n_outputs=env.action_space.n,
+        n_inputs=observation_space_size,
+        n_outputs=action_space_size,
         learning_rate=learning_rate
     )
 
-    dqn_agent = DQNAgent(
-        env=env,
+    agent = PathPlanningDQNAgent(
         model=model,
         epsilon_start=epsilon_start,
         epsilon_min=epsilon_min,
@@ -44,5 +38,4 @@ if __name__ == '__main__':
         sync_frequency=sync_frequency,
         batch_size=batch_size
     )
-    dqn_agent.train(n_episodes, n_steps)
-
+    agent.train(n_episodes, n_steps)

@@ -1,0 +1,12 @@
+<launch>	
+	<include file="$(find dojo_robot_new)/launch/robot_remote.launch"></include>
+	
+	<!-- hector -->
+	<include file="$(find hector_mapping)/launch/mapping_default.launch"></include>
+	<include file="$(find hector_geotiff)/launch/geotiff_mapper.launch">
+		<arg name="map_file_path" value="/home/yoksanherlie/catkin_ws/src/dojo-robot/maps"/>
+	</include>	
+	
+	<!-- rviz -->
+	<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
+</launch>

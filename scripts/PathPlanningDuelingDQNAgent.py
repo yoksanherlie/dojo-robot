@@ -8,12 +8,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from std_msgs.msg import Float32MultiArray
+import random
+import torch
+import torch.autograd as autograd
 
-class PathPlanningDQNAgent():
-    def __init__(self, env, model, epsilon_start, epsilon_min, epsilon_decay, gamma, sync_frequency, batch_size):
+class PathPlanningDuelingDQNAgent():
+    def __init__(self, env, model, target_model, optimizer, epsilon_start, epsilon_min, epsilon_decay, gamma, sync_frequency, batch_size):
         self.env = env
         self.model = model
-        self.target_model = deepcopy(model) # target network
+        self.target_model = target_model # target network
+        self.optimizer = optimizer
         self.epsilon_start = epsilon_start
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
@@ -29,8 +33,9 @@ class PathPlanningDQNAgent():
         epsilon = self.epsilon_min + (self.epsilon_start - self.epsilon_min) * np.exp(-1 * decay_step * self.epsilon_decay)
 
         if np.random.random() < epsilon:
-            action = 1
+            action = random.randrange(0,5) # 5 actions
         else:
+            state = autograd.Variable(torch.FloatTensor(state).unsqueeze(0))
             action = self.model.get_action(state)
         return action, epsilon
     
@@ -50,9 +55,7 @@ class PathPlanningDQNAgent():
             done = False
             step = 1
             while not done and step <= max_steps:
-                rospy.logwarn('---------- EPISODE: {} - START STEP {} ----------'.format(episode, step))
-
-                #rospy.loginfo('State: {}'.format(state))
+                rospy.logwarn('Episode: {} - Step {}'.format(episode, step))
 
                 # choose action from primary network (policy network)
                 action, epsilon = self.select_action(state, decay_step)
@@ -60,14 +63,16 @@ class PathPlanningDQNAgent():
                 next_state, reward, done = self.env.step(action)
                 self.reward += reward
 
-                rospy.logwarn('Reward: {}'.format(reward))
+                # rospy.loginfo('State: {}'.format(state))
+                rospy.loginfo('Reward: {}'.format(reward))
 
                 # add experience to replay memory
                 self.memory.append(state, action, reward, done, next_state)
                 state = next_state
 
                 # update model (policy network)
-                self.update()
+                if decay_step % 4 == 0:
+                    self.update()
 
                 # Sync target model with current model (policy network -> target network)
                 if decay_step % self.sync_frequency == 0:
@@ -75,7 +80,6 @@ class PathPlanningDQNAgent():
                     self.update_target_model()
                     self.update_counter += 1
                 
-                rospy.logwarn('---------- EPISODE: {} - END STEP {} ----------'.format(episode, step))
                 step += 1
                 decay_step += 1
             
@@ -90,10 +94,14 @@ class PathPlanningDQNAgent():
             self.episode_losses.append(np.mean(self.losses))
             self.losses = []
 
-            result.data = [self.reward, self.episode_losses[-1]]
+            result.data = [self.reward, mean_reward, self.episode_losses[-1]]
             self.result_pub.publish(result)
 
-            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.2}, decay_step: {}, update_counter: {}, time: {}] - Total time: {}'.format(
+            # save model per episode
+            if episode % 10 == 0:
+                self.save_model(episode)
+
+            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.3}, decay_step: {}, update_counter: {}, time: {}] - Total time: {}'.format(
                 episode,
                 self.reward,
                 epsilon,
@@ -107,28 +115,33 @@ class PathPlanningDQNAgent():
     
     def update(self):
         if self.memory.can_provide_sample():
-            rospy.logwarn('Updating model by preprocessing samples from experience replay...')
-            self.model.optimizer.zero_grad()
+            rospy.loginfo('Updating model by preprocessing samples from experience replay...')
             batch = self.memory.sample(self.batch_size)
             loss = self.calculate_loss(batch)
+            self.optimizer.zero_grad()
             loss.backward()
-            self.model.optimizer.step()
-            self.losses.append(loss.detach().numpy())
+            for param in self.model.parameters():
+                param.grad.data.clamp_(-1, 1)
+            self.optimizer.step()
+            self.losses.append(loss.item())
     
     def calculate_loss(self, batch):
         states, actions, rewards, dones, next_states = [i for i in batch]
-        rewards_t = torch.FloatTensor(rewards).reshape(-1, 1)
-        actions_t = torch.LongTensor(np.array(actions)).reshape(-1, 1)
-        dones_t = torch.ByteTensor(dones)
+        state = autograd.Variable(torch.FloatTensor(np.float32(states)))
+        next_state = autograd.Variable(torch.FloatTensor(np.float32(next_states)))
+        action = autograd.Variable(torch.LongTensor(actions))
+        reward = autograd.Variable(torch.FloatTensor(rewards))
+        done = autograd.Variable(torch.FloatTensor(dones))
 
-        qvals = torch.gather(self.model.get_qvals(states), 1, actions_t)
-        next_actions = torch.max(self.model.get_qvals(next_states), dim=-1)[1]
-        next_actions_t = torch.LongTensor(next_actions).reshape(-1,1)
-        target_qvals = self.target_model.get_qvals(next_states)
-        qvals_next = torch.gather(target_qvals, 1, next_actions_t).detach()
-        qvals_next[dones_t] = 0 # zero-out terminal states
-        expected_qvals = self.gamma * qvals_next + rewards_t
-        loss = nn.MSELoss()(qvals, expected_qvals)
+        q_values = self.model(state)
+        next_q_values = self.target_model(next_state)
+
+        q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+        next_q_value = next_q_values.max(1)[0]
+        expected_q_value = reward + self.gamma * next_q_value * (1 - done)
+
+        loss = nn.MSELoss()(q_value, expected_q_value.detach())
+
         return loss
     
     def update_target_model(self):
@@ -162,18 +175,19 @@ class PathPlanningDQNAgent():
         plt.ylabel('Loss')
         plt.legend()
 
-    def save_model(self, episode, loss):
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/stage_3_ep_{}.pt'.format(episode)
+    def save_model(self, episode):
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/dueling_stage_4_ep_{}_resume_3_1000.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.model.optimizer.state_dict(),
+            'target_model_state_dict': self.target_model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
             'epoch': episode,
             'loss': self.episode_losses[-1]
         }, path)
 
     def initialize(self):
         self.reward = 0
-        self.memory = ReplayMemory(50000, 300)
+        self.memory = ReplayMemory(50000, 100)
         self.rewards = []
         self.mean_rewards = []
         self.losses = []

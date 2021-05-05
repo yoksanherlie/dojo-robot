@@ -17,7 +17,7 @@ class ExplorationController:
         while not rospy.is_shutdown():
             result = self.run_once()
             r.sleep()
-            rospy.loginfo(result)
+            #rospy.loginfo(result)
             if result == False:
                 break
 
@@ -29,9 +29,11 @@ class ExplorationController:
             rospy.loginfo('No frontiers left.')
             return False
         rospy.loginfo('Moving to frontier...')
-        self.move_to_pose(poses[-1])
+        rospy.loginfo('Pose: {}'.format(poses[-1]))
+        status = self.move_to_pose(poses[-1])
+        rospy.loginfo('Goal Status: {}'.format(status))
 
-    def move_to_pose(self, pose_stamped, timeout=20.0):
+    def move_to_pose(self, pose_stamped, timeout=6.0):
         goal = MoveBaseGoal()
         goal.target_pose = pose_stamped
         self._move_base.send_goal(goal)

@@ -1,0 +1,9 @@
+<launch>
+	<!-- turtlebot3-->
+    	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
+    	<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_3.launch"></include>
+
+	<node pkg="dojo_robot_new" name="moving_obstacle" type="moving_obstacle.py" output="screen"/>
+
+    	<!--<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>-->
+</launch>

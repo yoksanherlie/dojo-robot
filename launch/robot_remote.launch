@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+		<param name="publish_frequency" type="double" value="50.0"/>
+	</node>
+
+<node pkg ="tf" type="static_transform_publisher" name="baselink_to_map" args="0.0 0.0 0.0 0.0 0.0 0.0 /base_link /map 40"/>
+</launch>

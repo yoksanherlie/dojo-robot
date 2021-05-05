@@ -1,0 +1,15 @@
+<launch>
+	<arg name="map_file" default="$(find dojo_robot_new)/maps/room_map.yaml"/>
+	
+	<include file="$(find dojo_robot_new)/launch/robot_remote.launch"/>
+	<node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+	<include file="$(find dojo_robot_new)/launch/amcl.launch">
+		<arg name="initial_pose_x" value="0.0"/>
+		<arg name="initial_pose_y" value="0.0"/>
+		<arg name="initial_pose_a" value="0.0"/>
+	</include>
+
+	<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
+
+</launch>

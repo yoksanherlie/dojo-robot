@@ -3,9 +3,13 @@
 
     <!-- turtlebot3-->
     <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
-    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_2.launch"></include>
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_4.launch"></include>
 
-	<node pkg="dojo_robot_new" name="dqn_dojo_robot" type="path_planning_training.py" output="screen" />
+	<!--<node pkg="dojo_robot_new" name="dqn_dojo_robot_path_planning" type="path_planning_training.py" output="screen" />-->
+	
+	<!--<node pkg="dojo_robot_new" name="moving_obstacle" type="moving_obstacle.py" output="screen"/>-->
+	<node pkg="dojo_robot_new" type="combination_obstacle_1.py" name="combination_obstacle_1" output="screen" />
+  	<node pkg="dojo_robot_new" type="combination_obstacle_2.py" name="combination_obstacle_2" output="screen" />
 
-    <node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
+    <!--<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>-->
 </launch>

@@ -18,7 +18,7 @@ def hector_exploration_client():
         action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
 
         while (not action.wait_for_server(rospy.Duration.from_sec(5.0))):
-            rospy.loginfo('move_base action ready')
+            rospy.loginfo('waiting move_base action to get ready')
         
         for pose in response.trajectory.poses:
             rospy.loginfo('new pose in trajectory list')

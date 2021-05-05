@@ -34,15 +34,6 @@ if __name__ == '__main__':
         learning_rate=learning_rate
     )
 
-    load_model = False
-    if load_model:
-        checkpoint = torch.load('/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/stage_2_ep_500.pt')
-        model.load_state_dict(checkpoint['model_state_dict'])
-        model.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        print(model)
-        rospy.loginfo('haihai')
-        rospy.loginfo(model)
-
     agent = PathPlanningDQNAgent(
         env=env,
         model=model,

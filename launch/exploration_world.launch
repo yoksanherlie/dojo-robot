@@ -1,26 +1,25 @@
 <launch>
-	<arg name="move_forward_only" default="true"/>
+
 	<include file="$(find mapping-environment)/launch/GazeboCircuitTurtlebotLidar_v0.launch"></include>
 	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
-	<!--<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch"></include>-->
 	
 	<!-- hector -->
 	<include file="$(find turtlebot3_slam)/launch/turtlebot3_hector.launch"></include>
 	<!--<include file="$(find hector_mapping)/launch/mapping_default.launch"></include>-->
 	<include file="$(find hector_exploration_node)/launch/exploration_planner.launch"></include>
-	<!--<node pkg="hector_exploration_controller" type="simple_exploration_controller" name="hector_exploration_controller_node" output="screen"/>-->
-	<!--<node pkg="dojo_robot_new" name="hector_dojo_robot" type="exploration.py" output="screen"/>-->
+	<include file="$(find hector_geotiff)/launch/geotiff_mapper.launch">
+                <arg name="map_file_path" value="/home/yoksanherlie/catkin_ws/src/dojo-robot/maps"/>
+        </include>
+
 
 	<!-- move base -->
 	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    		<!--<param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />-->
  		<rosparam file="$(find dojo_robot_new)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
 		<rosparam file="$(find dojo_robot_new)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     		<rosparam file="$(find dojo_robot_new)/config/local_costmap_params.yaml" command="load" />
     		<rosparam file="$(find dojo_robot_new)/config/global_costmap_params.yaml" command="load" />
     		<rosparam file="$(find dojo_robot_new)/config/move_base_params.yaml" command="load" />
     		<rosparam file="$(find dojo_robot_new)/config/dwa_local_planner_params.yaml" command="load" />
-    		<!--<param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />-->
 		<rosparam file="$(find dojo_robot_new)/config/base_local_planner_params.yaml" command="load"/>
   	</node>
 

@@ -8,7 +8,7 @@ class DuelingDQN(nn.Module):
             nn.Linear(num_inputs, 128),
             nn.ReLU(),
             nn.Linear(128, 128),
-            nn.ReLU()
+            nn.ReLU(),
         )
 
         self.advantage = nn.Sequential(

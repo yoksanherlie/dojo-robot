@@ -12,9 +12,7 @@
 		<arg name="initial_pose_a" value="0.0"/>
 	</include>
 
-	<include file="$(find dojo_robot_new)/launch/geotiff_mapper_path_planning.launch">
-		<arg name="map_file_path" value="/home/yoksanherlie/catkin_ws/src/dojo-robot/maps/test"/>
-	</include>
+	<include file="$(find dojo_robot_new)/launch/hector_mapping_path_planning.launch"/>
 
 	<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
 

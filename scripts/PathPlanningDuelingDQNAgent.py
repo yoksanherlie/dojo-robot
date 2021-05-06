@@ -11,6 +11,7 @@ from std_msgs.msg import Float32MultiArray
 import random
 import torch
 import torch.autograd as autograd
+import plotly.graph_objects as go
 
 class PathPlanningDuelingDQNAgent():
     def __init__(self, env, model, target_model, optimizer, epsilon_start, epsilon_min, epsilon_decay, gamma, sync_frequency, batch_size):
@@ -101,10 +102,11 @@ class PathPlanningDuelingDQNAgent():
             if episode % 10 == 0:
                 self.save_model(episode)
 
-            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.3}, decay_step: {}, update_counter: {}, time: {}] - Total time: {}'.format(
+            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.3}, mean_loss: {}, decay_step: {}, update_counter: {}, time: {}] - Total time: {}'.format(
                 episode,
                 self.reward,
                 epsilon,
+                self.episode_losses[-1],
                 decay_step,
                 self.update_counter,
                 episode_time,
@@ -160,23 +162,32 @@ class PathPlanningDuelingDQNAgent():
 
     def plot_rewards(self):
         print('Rewards: {}'.format(self.rewards))
-        plt.figure(num='Training Rewards', figsize=(12,8))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[i for i in range(1, len(self.rewards)+1)], y=self.rewards, name='rewards', mode='lines'))
+        fig.add_trace(go.Scatter(x=[i for i in range(1, len(self.mean_rewards)+1)], y=self.mean_rewards, name='mean_rewards'))
+        fig.update_layout(title='Training rewards', xaxis_title='Episodes', yaxis_title='Rewards')
+        fig.show()
+        '''plt.figure(num='Training Rewards', figsize=(12,8))
         plt.plot(self.rewards, label='Rewards')
         plt.plot(self.mean_rewards, label='Mean Rewards')
         plt.xlabel('Episodes')
         plt.ylabel('Rewards')
-        plt.legend()
+        plt.legend()'''
 
     def plot_losses(self):
         print('Losses: {}'.format(self.episode_losses))
-        plt.figure(num='Training Losses', figsize=(12,8))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[i for i in range(1, len(self.episode_losses)+1)], y=self.episode_losses, name='losses', mode='lines'))
+        fig.update_layout(title='Training losses', xaxis_title='Episodes', yaxis_title='Losses')
+        fig.show()
+        '''plt.figure(num='Training Losses', figsize=(12,8))
         plt.plot(self.episode_losses, label='Loss')
         plt.xlabel('Episodes')
         plt.ylabel('Loss')
-        plt.legend()
+        plt.legend()'''
 
     def save_model(self, episode):
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/dueling_stage_4_ep_{}_resume_3_1000.pt'.format(episode)
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/dueling_stage_4_ep_{}_new.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),
@@ -187,7 +198,7 @@ class PathPlanningDuelingDQNAgent():
 
     def initialize(self):
         self.reward = 0
-        self.memory = ReplayMemory(50000, 100)
+        self.memory = ReplayMemory(100000, 64)
         self.rewards = []
         self.mean_rewards = []
         self.losses = []

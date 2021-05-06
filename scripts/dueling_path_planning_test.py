@@ -33,6 +33,7 @@ if __name__ == '__main__':
     )
     model = load_model('../training_results/path_planning/dueling_stage_3_ep_190_resume_810.pt', model)
 
+    arrived_counter = 0
     # test
     for e in range(1, max_episodes + 1):
         state = preprocess_state(env.reset())
@@ -40,7 +41,7 @@ if __name__ == '__main__':
         arrived = False
         step = 1
         total_reward = 0
-        while not done and not arrived:
+        while not done and not arrived and step <= 500:
             rospy.logwarn('Episode: {} - Step {}'.format(e, step))
             
             action = model.get_action(state)
@@ -52,6 +53,10 @@ if __name__ == '__main__':
 
             step += 1
         
-        rospy.loginfo('episode: {}/{}, reward: {}, done: {}, arrived: {}'.format(e, max_episodes, total_reward, done, arrived))
         if arrived:
-            time.sleep(5.0)
+            arrived_counter += 1
+            rospy.loginfo('arrived! waiting 10s')
+            time.sleep(10.0)
+            rospy.loginfo('done waiting, continue')
+
+        rospy.loginfo('episode: {}/{}, reward: {}, done: {}, arrived: {} - {}/{}'.format(e, max_episodes, total_reward, done, arrived, arrived_counter, e))

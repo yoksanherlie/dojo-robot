@@ -1,5 +1,4 @@
-<launch>	
-	<!--<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>-->
+<launch>
 	<include file="$(find dojo_robot_new)/launch/robot_remote.launch"></include>
 	
 	<!-- hector -->

@@ -4,4 +4,8 @@
 	</node>
 
 <node pkg ="tf" type="static_transform_publisher" name="baselink_to_map" args="0.0 0.0 0.0 0.0 0.0 0.0 /base_link /map 40"/>
+
+<!--<node pkg="tf" type="static_transform_publisher" name="scanmatcher_odom_broadcaster" args="0 0 0 0 0 0 odom map 100"/>
+<node pkg="tf" type="static_transform_publisher" name="scanmatcher_baselink_broadcaster"
+ args="0 0 0 0 0 0 scanmatcher_frame base_link 100"/>-->
 </launch>

@@ -1,9 +1,10 @@
 <launch>
 	<rosparam command="load" file="$(find dojo_robot_new)/config/params.yaml" />
+	<arg name="map_file" default="$(find dojo_robot_new)/maps/stage_4.yaml"/>
 
-    <!-- turtlebot3-->
-    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
-    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_4.launch"></include>
+    	<!-- turtlebot3-->
+    	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
+    	<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_4.launch"></include>
 
 	<!--<node pkg="dojo_robot_new" name="dqn_dojo_robot_path_planning" type="path_planning_training.py" output="screen" />-->
 	
@@ -11,5 +12,15 @@
 	<node pkg="dojo_robot_new" type="combination_obstacle_1.py" name="combination_obstacle_1" output="screen" />
   	<node pkg="dojo_robot_new" type="combination_obstacle_2.py" name="combination_obstacle_2" output="screen" />
 
-    <!--<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>-->
+	<node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+        <include file="$(find dojo_robot_new)/launch/amcl.launch">
+                <arg name="initial_pose_x" value="0.0"/>
+                <arg name="initial_pose_y" value="0.0"/>
+                <arg name="initial_pose_a" value="0.0"/>
+        </include>
+
+        <include file="$(find dojo_robot_new)/launch/hector_mapping_path_planning.launch"/>
+
+    	<node pkg="rviz" type="rviz" name="dojo_rviz" required="true" args="-d $(find dojo_robot_new)/config/dojo.rviz"/>
 </launch>

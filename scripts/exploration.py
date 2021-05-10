@@ -8,14 +8,25 @@ from hector_nav_msgs.srv import GetRobotTrajectory
 class ExplorationClient:
 
     def __init__(self):
-        self.plan_service = rospy.ServicePoxy('get_exploration_path', GetRobotTrajectory)
+        self.plan_service = rospy.ServiceProxy('get_exploration_path', GetRobotTrajectory)
         self.move_base_action = actionlib.SimpleActionClient('move_base', MoveBaseAction)
 
     def start(self):
-        r = rospy.Rate(1 / 10.0)
+        start_time = rospy.Time.now()
+        r = rospy.Rate(1/7.0)
+        rospy.loginfo('Start exploring...')
         while not rospy.is_shutdown():
             result = self.explore()
             r.sleep()
+            time = rospy.Time.now()
+            duration = time - start_time
+            rospy.loginfo('Time so far: {}s'.format(duration.to_sec()))
+            if not result:
+                rospy.loginfo('done')
+                break
+        end_time = rospy.Time.now()
+        duration = end_time - start_time
+        rospy.loginfo('Exploration done in {}s'.format(duration.to_sec()))
     
     def explore(self):
         rospy.loginfo('Waiting for plan service...')
@@ -23,9 +34,11 @@ class ExplorationClient:
         if len(path.poses) > 0:
             rospy.loginfo('Moving to frontier...')
             return self.navigate(path.poses[-1])
+        else:
+            rospy.logwarn('No frontiers left!')
         return False
     
-    def navigate(self, pose, timeout=20.0):
+    def navigate(self, pose, timeout=5.0):
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = '/map'
         goal.target_pose.header.stamp = rospy.Time.now()

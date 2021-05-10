@@ -9,6 +9,7 @@ sys.path.append('/home/yoksanherlie/Documents/univ/envs/custom_envs')
 #from environment_stage_2 import Env
 #from environment_stage_3 import Env
 from environment_stage_4 import Env
+import torch
 
 def load_model_checkpoint(path, model, target_model, optimizer):
     checkpoint = torch.load(path)
@@ -51,11 +52,17 @@ if __name__ == '__main__':
 
     load_model = False
     if load_model:
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/dueling_stage_3_ep_190_resume_810.pt'
+        rospy.loginfo('loading model...')
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/NEW_dueling_stage_3_ep_500.pt'
         model, target_model, optimizer, ep = load_model_checkpoint(path, model, target_model, optimizer)
-        #epsilon_min = 0.5
-        #n_episodes -= ep
-       
+        epsilon_start = 0.05
+
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    for state in optimizer.state.values():
+        for k, v in state.items():
+            if isinstance(v, torch.Tensor):
+                state[k] = v.cuda()
+
     agent = PathPlanningDuelingDQNAgent(
         env=env,
         model=model,
@@ -66,6 +73,6 @@ if __name__ == '__main__':
         epsilon_decay=epsilon_decay,
         gamma=gamma,
         sync_frequency=sync_frequency,
-        batch_size=batch_size
+        batch_size=batch_size,
     )
     agent.train(n_episodes, n_steps)

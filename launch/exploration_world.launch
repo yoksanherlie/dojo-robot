@@ -1,6 +1,7 @@
 <launch>
 
-	<include file="$(find mapping-environment)/launch/GazeboCircuitTurtlebotLidar_v0.launch"></include>
+	<!--<include file="$(find mapping-environment)/launch/GazeboCircuitTurtlebotLidar_v0.launch"></include>-->
+	<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_stage_4.launch"></include>
 	<include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"></include>
 	
 	<!-- hector -->

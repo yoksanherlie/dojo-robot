@@ -13,12 +13,11 @@ import torch
 import torch.autograd as autograd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import csv
 
 USE_CUDA = torch.cuda.is_available()
 Variable = lambda *args, **kwargs: autograd.Variable(*args, **kwargs).cuda() if USE_CUDA else autograd.Variable(*args, **kwargs)
 
-class PathPlanningDuelingDQNAgent():
+class PathPlanningDuelingDQNAgentCustom():
     def __init__(self, env, model, target_model, optimizer, epsilon_start, epsilon_min, epsilon_decay, gamma, sync_frequency, batch_size):
         self.env = env
         self.model = model
@@ -52,88 +51,45 @@ class PathPlanningDuelingDQNAgent():
             action = self.model.get_action(state)
         return action, epsilon
     
-    def train(self, max_episodes=1000, max_steps=300, start_episode=1):
-        start_time = time.time()
-        decay_step = 1
+    def train(self, max_frames=1000, start_frame=1):
         result = Float32MultiArray()
+        episode = 1
+        episode_start_time = time.time()
 
-        for episode in range(start_episode, start_episode + max_episodes):
-            rospy.logwarn('=========== START EPISODE {} ==========='.format(episode))
+        state = self.env.reset()
+        for idx in range(start_frame, max_frames+start_frame):
+            rospy.loginfo('Episode: {} - frame: {}'.format(episode, idx))
 
-            episode_start_time = time.time()
+            action, epsilon = self.select_action(state)
+            next_state, reward, done = self.env.step(action)
+            self.reward += reward
 
-            state = self.env.reset()
-            self.reward = 0
-            
-            done = False
-            step = 1
-            while not done and step <= max_steps:
-                rospy.logwarn('Episode: {} - Step {}'.format(episode, step))
+            self.memory.append(state, action, reward, done, next_state)
+            state = next_state
 
-                # choose action from primary network (policy network)
-                action, epsilon = self.select_action(state, decay_step)
-                # execute action in the environment and get feedback
-                next_state, reward, done = self.env.step(action)
-                self.reward += reward
+            self.update()
 
-                # rospy.loginfo('State: {}'.format(state))
-                rospy.loginfo('Reward: {}'.format(reward))
+            if idx % 1000 == 0:
+                self.save_model(episode)
+                self.update_target_model()
 
-                # add experience to replay memory
-                self.memory.append(state, action, reward, done, next_state)
-                state = next_state
+            if done:
+                episode_end_time = self.calculate_time(episode_start_time)
+                state = self.env.reset()
+                rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.3}, mean_loss: {}] - time: {}'.format(
+                    episode,
+                    self.reward,
+                    epsilon,
+                    0,
+                    episode_end_time,
+                ))
+                episode += 1
+                self.reward = 0
 
-                # update model (policy network)
-                if decay_step % 1 == 0:
-                    self.update()
-
-                # Sync target model with current model (policy network -> target network)
-                if decay_step % self.sync_frequency == 0:
-                    rospy.logwarn('Update target model: step {}'.format(decay_step))
-                    self.update_target_model()
-                    self.update_counter += 1
-                
-                step += 1
-                decay_step += 1
-            
-            # end of episode
-            episode_time = self.calculate_time(episode_start_time)
-            total_time = self.calculate_time(start_time)
-
-            # logging for plotting
-            self.rewards.append(self.reward)
-            mean_reward = np.mean(self.rewards[-self.window:])
-            self.mean_rewards.append(mean_reward)
-            self.episode_losses.append(np.mean(self.losses))
-            self.losses = []
-
+            # logging data
             result.data = [self.reward, mean_reward, self.episode_losses[-1]]
             self.result_pub.publish(result)
 
-            # save model per episode
-            if episode % 10 == 0:
-                self.save_model(episode)
-
-            if episode % 100 == 0:
-                path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/data/'
-                with open(path+'reward.csv', 'a') as f:
-                    writer = csv.writer(f)
-                    writer.writerow(self.rewards)
-
-                with open(path+'loss.csv', 'a') as f:
-                    writer = csv.writer(f)
-                    writer.writerow(self.episode_losses)
-
-            rospy.logwarn('Episode {} - [reward: {}, epsilon: {:.3}, mean_loss: {}, decay_step: {}, update_counter: {}, time: {}] - Total time: {}'.format(
-                episode,
-                self.reward,
-                epsilon,
-                self.episode_losses[-1],
-                decay_step,
-                self.update_counter,
-                episode_time,
-                total_time
-            ))
         self.save_model(episode)
         self.plot_results()
     
@@ -213,7 +169,7 @@ class PathPlanningDuelingDQNAgent():
         plt.legend()'''
 
     def save_model(self, episode):
-        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/NEW_dueling_stage_4_ep_{}_2.pt'.format(episode)
+        path = '/home/yoksanherlie/catkin_ws/src/dojo-robot/training_results/path_planning/NEW_dueling_stage_3_frame_{}_2.pt'.format(episode)
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'target_model_state_dict': self.target_model.state_dict(),

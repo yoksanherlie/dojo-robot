@@ -21,12 +21,13 @@ import rospy
 import os
 import json
 import numpy as np
-import random
 import time
 import sys
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from collections import deque
 from std_msgs.msg import Float32MultiArray
+import secrets
+
 #from src.turtlebot3_dqn.environment_stage_3 import Env
 sys.path.append('/home/yoksanherlie/Documents/univ/envs/custom_envs')
 from environment_stage_3 import Env
@@ -101,7 +102,7 @@ class ReinforceAgent():
     def getAction(self, state):
         if np.random.rand() <= self.epsilon:
             self.q_value = np.zeros(self.action_size)
-            return random.randrange(self.action_size)
+            return secrets.SystemRandom().randrange(self.action_size)
         else:
             q_value = self.model.predict(state.reshape(1, len(state)))
             self.q_value = q_value
@@ -111,7 +112,7 @@ class ReinforceAgent():
         self.memory.append((state, action, reward, next_state, done))
 
     def trainModel(self, target=False):
-        mini_batch = random.sample(self.memory, self.batch_size)
+        mini_batch = secrets.SystemRandom().sample(self.memory, self.batch_size)
         X_batch = np.empty((0, self.state_size), dtype=np.float64)
         Y_batch = np.empty((0, self.action_size), dtype=np.float64)
 

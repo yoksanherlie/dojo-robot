@@ -8,12 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from std_msgs.msg import Float32MultiArray
-import random
 import torch
 import torch.autograd as autograd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import csv
+import secrets
 
 USE_CUDA = torch.cuda.is_available()
 Variable = lambda *args, **kwargs: autograd.Variable(*args, **kwargs).cuda() if USE_CUDA else autograd.Variable(*args, **kwargs)
@@ -45,7 +45,7 @@ class PathPlanningDuelingDQNAgent():
         epsilon = self.epsilon_min + (self.epsilon_start - self.epsilon_min) * np.exp(-1 * decay_step * self.epsilon_decay)
 
         if np.random.random() < epsilon:
-            action = random.randrange(0,5) # 5 actions
+            action = secrets.SystemRandom().randrange(0,5) # 5 actions
         else:
             state = Variable(torch.FloatTensor(state).unsqueeze(0))
             rospy.loginfo('state cuda: {}'.format(state.is_cuda))

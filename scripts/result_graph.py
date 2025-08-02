@@ -22,6 +22,7 @@ import pickle
 from std_msgs.msg import Float32MultiArray, Float32
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+import fickling
 
 class Window(QMainWindow):
     def __init__(self):
@@ -81,7 +82,7 @@ class Window(QMainWindow):
     def load_data(self):
         try:
             with open("graph.txt") as f:
-                x, y = pickle.load(f)
+                x, y = fickling.load(f)
         except:
             x, y = [], []
         return x, y
